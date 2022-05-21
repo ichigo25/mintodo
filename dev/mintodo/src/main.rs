@@ -1,17 +1,15 @@
 use std::time::Duration;
+use std::file;
 
 use tokio::runtime::Builder;
 use tokio::net::TcpListener;
 use tokio::io::{ AsyncReadExt, AsyncWriteExt };
 
-use tracing::{ info, error };
-use tracing_subscriber;
-
+use tracing::{ Level, info, error };
+use tracing_subscriber::FmtSubscriber;
 
 fn main()
 {
-    tracing_subscriber::fmt::init();
-
     // 設定値
     let app_name = "xxx";
     let worker_threads = 5;
@@ -20,6 +18,19 @@ fn main()
     let stack_size = 3145728;
     let address = "127.0.0.1";
     let port = "8000";
+
+    // Tracingの設定
+    let subscriber = FmtSubscriber::builder()
+        .pretty()
+        .with_timer(tracing_subscriber::fmt::time::ChronoLocal::rfc3339())
+        .with_thread_ids(true)
+        .with_thread_names(true)
+        .with_max_level(Level::TRACE)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("setting default subscriber failed");
+
+    info!("Initializing {}", app_name);
 
     // Tokioのランタイム
     let runtime = match Builder::new_multi_thread()
